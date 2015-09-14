@@ -95,19 +95,13 @@ class CheckSNMP < Sensu::Plugin::Check::CLI
       end
       dev_indexes.each do |dev_index|
         response = manager.get(["#{dev_desc_oid}.#{dev_index}", "#{dev_unit_oid}.#{dev_index}", "#{dev_size_oid}.#{dev_index}", "#{dev_used_oid}.#{dev_index}"])
-        list = response.varbind_list
-        until list.empty?
-          dev_desc = list.shift
-          dev_unit = list.shift
-          dev_size = list.shift
-          dev_used = list.shift
-          next if config[:ignoremnt] && config[:ignoremnt].include?(dev_desc.value.to_s.split(",")[0])
-          perc = dev_used.value.to_f / dev_size.value.to_f * 100
-          if perc > config[:critical]
-            @crit_mnt << "#{dev_desc.value.to_s} = #{perc.round(2)}%"
-          elsif perc > config[:warning]
-            @warn_mnt << "#{dev_desc.value.to_s} = #{perc.round(2)}%"
-          end
+        dev_desc, dev_unit, dev_size, dev_used = response.varbind_list
+        next if config[:ignoremnt] && config[:ignoremnt].include?(dev_desc.value.to_s.split(",")[0])
+        perc = dev_used.value.to_f / dev_size.value.to_f * 100
+        if perc > config[:critical]
+          @crit_mnt << "#{dev_desc.value.to_s} = #{perc.round(2)}%"
+        elsif perc > config[:warning]
+          @warn_mnt << "#{dev_desc.value.to_s} = #{perc.round(2)}%"
         end
       end
     rescue SNMP::RequestTimeout
